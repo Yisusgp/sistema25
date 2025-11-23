@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* El modo oscuro se maneja con 'darkMode: "class"' en tailwind.config.js
+*/
+
+/* Variables globales */
+:root {
+  --font-size: 16px;
+  --background: #ffffff;
+  --foreground: #232323;
+  --card: #ffffff;
+  --card-foreground: #232323;
+  --popover: #ffffff;
+  --popover-foreground: #232323;
+  --primary: #030213;
+  --primary-foreground: #ffffff;
+  --secondary: #f2f2f8;
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #b3b3b3;
+  --radius: 0.625rem;
+}
+
+/* Modo oscuro (por clase .dark en html o body) */
+.dark {
+  --background: #1e1e1e;
+  --foreground: #f8f8f8;
+  --card: #353535;
+  --card-foreground: #a79b9b;
+  --popover: #1e1e1e;
+  --popover-foreground: #cacaca;
+  --primary: #ecd8d8;
+  --primary-foreground: #232323;
+  --secondary: #333333;
+  --secondary-foreground: #f8f8f8;
+  --muted: #333333;
+  --muted-foreground: #b3b3b3;
+  --accent: #333333;
+  --accent-foreground: #f8f8f8;
+  --destructive: #802031;
+  --destructive-foreground: #f8f8f8;
+  --border: #333333;
+  --input: #333333;
+  --ring: #6e6e6e;
+}
+
+/* Aplicar las variables a Tailwind */
+@layer base {
+  /* ¡CORRECCIÓN CLAVE! Se eliminan los estilos de borde y outline del selector universal (*) 
+     para evitar el 'efecto azul' global y los bordes duplicados. */
+  * {
+    /* @apply border border-[var(--border)] outline outline-blue-500/50; */
+    /* Se deja el estilo base sin modificaciones universales de borde/outline. */
+  }
+
+  /* Aquí se aplican las clases a los elementos BODY y fuentes (esto es correcto) */
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, p, label, button, input {
+    line-height: 1.5;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-medium);
+  }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-medium);
+  }
+  h3 {
+    font-size: 1.125rem;
+    font-weight: var(--font-weight-medium);
+  }
+  h4 {
+    font-size: 1rem;
+    font-weight: var(--font-weight-medium);
+  }
+  p, label, input, button {
+    font-size: 1rem;
+    font-weight: var(--font-weight-normal);
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
