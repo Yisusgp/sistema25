@@ -369,14 +369,14 @@ export function AdminDashboard({
                           <div>
                             <p className="mb-1">
                               👤 <strong>Usuario ID:</strong>{" "}
-                              {registro.id_usuario}
+                              {registro.ID_Usuario}
                             </p>
                             <p>🗺️ {registro.Ubicacion_Espacio || 'N/A'}</p>
                           </div>
                           <div>
                             <p className="mb-1">
                               📅 <strong>Fecha:</strong>{" "}
-                              {new Date(registro.fecha_hora_inicio).toLocaleDateString(
+                              {new Date(registro.Fecha_Hora_Inicio).toLocaleDateString(
                                 "es-ES",
                                 {
                                   weekday: "long",
@@ -388,7 +388,7 @@ export function AdminDashboard({
                             </p>
                             <p>
                               🕐 <strong>Horario:</strong>{" "}
-                              {new Date(registro.fecha_hora_inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(registro.Fecha_Hora_Fin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(registro.Fecha_Hora_Inicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(registro.Fecha_Hora_Fin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>

@@ -5,45 +5,47 @@ import { LoginForm } from "@/components/LoginForm";
 import { ReservationDashboard } from "@/components/ReservationDashboard";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { Toaster, toast } from "sonner";
-import { supabase } from "@/lib/supabase"; // ⬅️ Cliente de Supabase
+import { supabase } from "@/lib/supabase";
 import {
   UserProfile,
   RegistroUso,
   EspacioMapeo,
   RegistroUsoStatus,
-} from "@/types/app"; // ⬅️ Importación de tipos de /types/app.ts
+} from "@/types/app";
 
 // ----------------------------------------------------------------------
 // 1. FUNCIONES AUXILIARES DE SUPABASE: Carga de Perfil y Registros
 // ----------------------------------------------------------------------
 
-//ASUNCIÓN CRUCIAL: La tabla USUARIO tiene una columna 'auth_uuid' vinculada a auth.users.id
 const fetchProfileAndRole = async (authUserId: string): Promise<UserProfile | null> => {
-  // 1. Obtener ID_Usuario, Nombre, y Apellido de la tabla USUARIO
+  // 1. Obtener Id_Usuario, Nombre, y Apellido de la tabla USUARIO
   const { data: userData, error: userError } = await supabase
-    .from('usuario')
-    .select('id_usuario, nombre, apellido, correo_electronico')
-    .eq('auth_uuid', authUserId)
+    .from('Usuario')
+    .select('Id_Usuario, Nombre, Apellido, Correo_Electronico')
+    .eq('Auth_Uuid', authUserId)
     .single();
 
   if (userError || !userData) {
-    console.error("Error al cargar USUARIO:", JSON.stringify(userError, null, 2));//cambo en el manejo de errores
+    console.error("Error al cargar USUARIO:", JSON.stringify(userError, null, 2));
     return null;
   }
 
   let role: UserProfile['role'] = 'guest';
 
   // 2. Determinar el rol por existencia en tablas especializadas
+  // CORRECCIÓN: Usar el nombre correcto de la columna FK (probablemente 'Id_Usuario')
   const checks = [
-    { table: 'administrador', role: 'admin' },
-    { table: 'profesor', role: 'profesor' },
-    { table: 'estudiante', role: 'estudiante' },
+    { table: 'Administrador', role: 'admin' },
+    { table: 'Profesor', role: 'profesor' },
+    { table: 'Estudiante', role: 'estudiante' },
   ];
   
   for (const check of checks) {
-    const { count } = await supabase.from(check.table)
+    const { count } = await supabase
+      .from(check.table)
       .select('*', { count: 'exact', head: true })
-      .eq('id_usuario', userData.id_usuario);
+      .eq('Id_Usuario', userData.Id_Usuario); // CORRECCIÓN: Mantener Id_Usuario
+    
     if (count && count > 0) {
       role = check.role as UserProfile['role'];
       break;
@@ -51,11 +53,10 @@ const fetchProfileAndRole = async (authUserId: string): Promise<UserProfile | nu
   }
 
   return {
-    id: userData.id_usuario,
+    id: userData.Id_Usuario,
     authId: authUserId,
-    name: `${userData.nombre} ${userData.apellido}`,
-    email: userData.correo_electronico,
-
+    name: `${userData.Nombre} ${userData.Apellido}`,
+    email: userData.Correo_Electronico,
     role: role,
   };
 };
@@ -63,34 +64,32 @@ const fetchProfileAndRole = async (authUserId: string): Promise<UserProfile | nu
 // Carga de todos los espacios para el mapeo de ID en el formulario
 const fetchEspacios = async (): Promise<EspacioMapeo[]> => {
   const { data, error } = await supabase
-    .from('espacio')
-    .select('id_espacio, nombre, tipo_espacio');
+    .from('Espacio')
+    .select('Id_Espacio, Nombre, Tipo_Espacio');
   
   if (error) {
       toast.error("Error al cargar la lista de espacios.");
       return [];
   }
   return (data || []).map((item: any) => ({
-    ID_Espacio: item.id_espacio,
-    Nombre: item.nombre,
-    Tipo_Espacio: item.tipo_espacio,
+    ID_Espacio: item.Id_Espacio,
+    Nombre: item.Nombre,
+    Tipo_Espacio: item.Tipo_Espacio,
   }));
 };
-
 
 // Carga de registros de uso (reservas)
 const fetchRegistros = async (userProfile: UserProfile): Promise<RegistroUso[]> => {
   let query = supabase
-    .from('registro_uso')
+    .from('Registro_Uso')
     .select(`
       *,
-      espacio(nombre, ubicacion) // JOIN implícito con la FK ID_Espacio
+      Espacio(Nombre, Ubicacion)
     `)
-    .order('fecha_hora_inicio', { ascending: false });
+    .order('Fecha_Hora_Inicio', { ascending: false });
     
-  // El rol 'admin' ve todo; otros solo ven sus registros.
   if (userProfile.role !== 'admin') {
-    query = query.eq('id_usuario', userProfile.id);
+    query = query.eq('Id_Usuario', userProfile.id);
   }
 
   const { data, error } = await query;
@@ -99,11 +98,11 @@ const fetchRegistros = async (userProfile: UserProfile): Promise<RegistroUso[]> 
     return [];
   }
   
-  // Mapeo de la relación ESPACIO a propiedades planas en el objeto RegistroUso
+  // CORRECCIÓN: Usar el nombre correcto de la relación (probablemente en mayúsculas)
   return data.map((r: any) => ({
     ...r,
-    Nombre_Espacio: r.espacio.nombre,
-    Ubicacion_Espacio: r.espacio.Ubicacion,
+    Nombre_Espacio: r.ESPACIO?.Nombre || 'Espacio no disponible',
+    Ubicacion_Espacio: r.ESPACIO?.Ubicacion || 'Ubicación no disponible',
   })) as RegistroUso[]; 
 };
 
@@ -114,18 +113,13 @@ const fetchRegistros = async (userProfile: UserProfile): Promise<RegistroUso[]> 
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [registros, setRegistros] = useState<RegistroUso[]>([]);
-  const [espacios, setEspacios] = useState<EspacioMapeo[]>([]); // Mapeo de espacios
+  const [espacios, setEspacios] = useState<EspacioMapeo[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // -----------------------------------------------------------
-  // 2. LÓGICA DE AUTENTICACIÓN Y CARGA INICIAL (useEffect)
-  // -----------------------------------------------------------
 
   useEffect(() => {
     const loadApp = async () => {
       setLoading(true);
       
-      // Cargar mapeo de espacios primero (necesario para el formulario)
       const loadedEspacios = await fetchEspacios();
       setEspacios(loadedEspacios);
 
@@ -138,9 +132,8 @@ export default function App() {
           const loadedRegistros = await fetchRegistros(profile);
           setRegistros(loadedRegistros);
         } else {
-            // Usuario autenticado pero sin perfil (raro, cerrar sesión)
-            await supabase.auth.signOut();
-            setUser(null);
+          await supabase.auth.signOut();
+          setUser(null);
         }
       } else {
         setUser(null);
@@ -149,11 +142,9 @@ export default function App() {
     };
     loadApp();
     
-    // Listener para cambios de Auth (Ej: después del login/logout)
     const { data: authListener } = supabase.auth.onAuthStateChange(
         (event, session) => {
             if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-                // Re-ejecutar la lógica de carga al cambiar el estado de la sesión
                 loadApp(); 
             }
         }
@@ -163,10 +154,6 @@ export default function App() {
       authListener?.subscription.unsubscribe();
     };
   }, []);
-
-  // -----------------------------------------------------------
-  // 3. FUNCIONES CRUD (Llamadas a la API de Supabase)
-  // -----------------------------------------------------------
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -179,13 +166,12 @@ export default function App() {
     }
   };
 
-  // 🟢 CREAR REGISTRO: Usa la RPC (Trigger del servidor)
   const handleCreateReservation = async (
-    reservationData: Omit<RegistroUso, "ID_Registro" | "Estado_Final">,
+    reservationData: Omit<RegistroUso, "Id_Registro" | "Estado_Final">,
   ): Promise<{ success: boolean; error?: string }> => {
     
     const { error } = await supabase.rpc('check_and_create_registro', {
-        p_id_usuario: reservationData.ID_Usuario,
+        p_Id_Usuario: reservationData.ID_Usuario,
         p_id_espacio: reservationData.ID_Espacio,
         p_id_curso: reservationData.ID_Curso,
         p_fecha_hora_inicio: reservationData.Fecha_Hora_Inicio,
@@ -194,11 +180,9 @@ export default function App() {
     });
     
     if (error) {
-        // Captura el error lanzado por la función PostgreSQL/Trigger
         return { success: false, error: error.message };
     }
     
-    // Si tiene éxito, recargar los registros para actualizar la vista
     if (user) {
         const updatedRegistros = await fetchRegistros(user);
         setRegistros(updatedRegistros);
@@ -206,12 +190,11 @@ export default function App() {
     return { success: true };
   };
 
-  // 🟢 APROBAR REGISTRO (ADMIN)
   const handleApproveReservation = async (idRegistro: number) => {
     const { error } = await supabase
-      .from('registro_uso')
+      .from('Registro_Uso')
       .update({ Estado_Final: 'Confirmado' as RegistroUsoStatus })
-      .eq('ID_Registro', idRegistro);
+      .eq('Id_Registro', idRegistro);
 
     if (error) { toast.error(`Error al aprobar: ${error.message}`); return; }
     
@@ -222,12 +205,11 @@ export default function App() {
     }
   };
   
-  // 🟢 RECHAZAR REGISTRO (ADMIN)
   const handleRejectReservation = async (idRegistro: number, reason: string) => {
     const { error } = await supabase
-      .from('registro_uso')
+      .from('Registro_Uso')
       .update({ Estado_Final: 'Rechazado' as RegistroUsoStatus, Observaciones: reason })
-      .eq('ID_Registro', idRegistro);
+      .eq('Id_Registro', idRegistro);
 
     if (error) { toast.error(`Error al rechazar: ${error.message}`); return; }
     
@@ -238,12 +220,11 @@ export default function App() {
     }
   };
 
-  // 🟢 ELIMINAR/CANCELAR REGISTRO (Usuario/Admin)
   const handleDeleteReservation = async (idRegistro: number) => {
     const { error } = await supabase
-        .from('registro_uso')
+        .from('Registro_Uso')
         .delete()
-        .eq('ID_Registro', idRegistro);
+        .eq('Id_Registro', idRegistro);
 
     if (error) { toast.error(`Error al eliminar: ${error.message}`); return; }
     
@@ -254,11 +235,6 @@ export default function App() {
     }
   };
 
-
-  // -----------------------------------------------------------
-  // 4. RENDERIZADO CONDICIONAL
-  // -----------------------------------------------------------
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -267,31 +243,29 @@ export default function App() {
     );
   }
 
-  // Filtrar reservas que pertenecen al usuario (solo para el dashboard)
   const userRegistros = user ? registros.filter((r) => r.ID_Usuario === user.id) : [];
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
       {!user ? (
-        // El LoginForm ahora debe usar supabase.auth.signInWithPassword
         <LoginForm /> 
       ) : user.role === "admin" ? (
         <AdminDashboard
           user={user}
           onLogout={handleLogout}
-          reservations={registros} // El admin ve TODOS los registros
+          reservations={registros}
           onApprove={handleApproveReservation}
           onReject={handleRejectReservation}
-          onCancel={handleDeleteReservation} // Usar delete como cancelación forzada por ahora
+          onCancel={handleDeleteReservation}
         />
       ) : (
         <ReservationDashboard
           user={user}
           onLogout={handleLogout}
           onCreateReservation={handleCreateReservation}
-          reservations={userRegistros} // El usuario solo ve sus registros
+          reservations={userRegistros}
           onDeleteReservation={handleDeleteReservation}
-          espacios={espacios} // Pasamos el mapeo para el formulario
+          espacios={espacios}
         />
       )}
       <Toaster />
