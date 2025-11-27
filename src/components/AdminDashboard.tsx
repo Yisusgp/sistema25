@@ -369,7 +369,7 @@ export function AdminDashboard({
                           <div>
                             <p className="mb-1">
                               👤 <strong>Usuario ID:</strong>{" "}
-                              {registro.ID_Usuario}
+                              {registro.Nombre_Usuario || `Usuario ${registro.ID_Usuario}`}
                             </p>
                             <p>🗺️ {registro.Ubicacion_Espacio || 'N/A'}</p>
                           </div>

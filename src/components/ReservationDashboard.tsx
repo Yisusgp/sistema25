@@ -115,6 +115,7 @@ export function ReservationDashboard({
       Fecha_Hora_Fin: formattedDateTimeEnd,
       Proposito: description,
       Observaciones: null,
+      Nombre_Usuario: ""
     });
 
     if (!result.success) {
