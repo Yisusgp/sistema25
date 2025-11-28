@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,6 +59,20 @@ export function LoginForm({}: LoginFormProps) {
     <div className="flex items-center justify-center min-h-screen p-4 bg-gray-50">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center space-x-4 mb-4">
+            <Image
+              src="/LOGO FIEC.png"
+              alt="FIEC Logo"
+              width={150}
+              height={150}
+            />
+            <Image
+              src="/logo_un.png"
+              alt="UNV Logo"
+              width={100}
+              height={100}
+            />
+          </div>
           <div className="flex items-center justify-center mb-4">
             <div className="p-3 bg-indigo-100 rounded-full">
               <LogIn className="w-8 h-8 text-indigo-600" />
